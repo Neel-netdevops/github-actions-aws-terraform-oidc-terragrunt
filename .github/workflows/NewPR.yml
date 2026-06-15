@@ -1,0 +1,106 @@
+name: NEW PR Terraform CI/CD
+
+on:
+  pull_request:
+    types: [opened] # Trigger ONLY when a new PR is created (not on updates/pushes to the PR)
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+  id-token: write
+  
+
+jobs:
+  Terraform_plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-1
+    #   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    #   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.head_ref }}
+
+    - name: configure aws credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-to-assume: ${{secrets.AWS_ROLE_ARN}}
+        aws-region: ${{ env.AWS_REGION }}  
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.7
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Plan
+      run: |
+        terraform plan -no-color -out=tfplan
+        terraform show -json tfplan > tfplan.json
+
+    - name: Upload Plan Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: tfplan-pr-${{ github.event.number }}
+        path: |
+          tfplan
+          tfplan.json
+        retention-days: 2
+
+    - name: Commit Plan Files to PR Branch
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add tfplan tfplan.json
+        git commit -m "Add terraform plan files for PR #${{ github.event.number }}"
+        git push
+
+  Terraform_apply:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-1
+      # AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      # AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: configure aws credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-to-assume: ${{secrets.AWS_ROLE_ARN}}
+        aws-region: ${{ env.AWS_REGION }}  
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.7
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Apply
+      run: terraform apply -auto-approve
+
+      #Cleanup steps to remove plan files after apply
+    - name: Remove Plan Files
+      run: |
+        rm -f tfplan tfplan.json
+
+    - name: Commit Plan File Removal
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git rm --ignore-unmatch tfplan tfplan.json
+        git commit -m "Remove terraform plan files after apply"
+        git push
