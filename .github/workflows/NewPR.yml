@@ -1,4 +1,4 @@
-name: NEW AWS Terraform CI/CD
+name: NEW AWS  Terraform CI/CD
 
 on:
   pull_request:
