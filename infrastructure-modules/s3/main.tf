@@ -1,14 +1,6 @@
-resource "aws_vpc" "main" {
-  cidr_block = var.vpc_cidr_block
+resource "aws_s3_bucket" "test_bucket18041990" {
+  bucket = var.s3_bucket_name
   tags = {
-    Name = var.vpc_tag_name
-  } 
-
-resource "aws_subnet" "main" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = var.subnet_cidr_block
-  tags = {
-    Name = "${var.vpc_tag_name}-subnet"
+    Name = var.s3_bucket_tag_name
   }
 }
-

@@ -4,4 +4,9 @@
 *.tfstate.backup
 .terraform.tfstate
 .terraform.tfstate.backup
-*.tfvars    
+*.tfvars
+.terragrunt-cache/
+provider.tf
+backend.tf
+tfplan
+tfplan.json

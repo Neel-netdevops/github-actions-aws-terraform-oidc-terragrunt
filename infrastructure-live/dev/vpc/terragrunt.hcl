@@ -17,5 +17,3 @@ inputs = {
         Name = "dev-subnet"
     }
 }
-
-
