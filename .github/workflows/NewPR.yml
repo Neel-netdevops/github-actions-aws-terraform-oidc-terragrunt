@@ -1,11 +1,12 @@
-name: NEW PR Terraform CI/CD
+name: NEW AWS  Terraform CI/CD
 
 on:
-  pull_request:
-    types: [opened] # Trigger ONLY when a new PR is created (not on updates/pushes to the PR)
-    branches: [ main ]
+  workflow_dispatch:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
 
 permissions:
   contents: write
@@ -29,7 +30,7 @@ jobs:
         ref: ${{ github.head_ref }}
 
     - name: configure aws credentials
-      uses: aws-actions/configure-aws-credentials@v2
+      uses: aws-actions/configure-aws-credentials@v3
       with:
         role-to-assume: ${{secrets.AWS_ROLE_ARN}}
         aws-region: ${{ env.AWS_REGION }}  
